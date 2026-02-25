@@ -400,9 +400,9 @@ export default function App() {
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none mix-blend-overlay"></div>
         
         <div className="relative z-10 flex flex-col items-center">
-          <div className="relative mb-6">
-            <Trophy className="w-20 h-20 text-yellow-400 drop-shadow-[0_0_25px_rgba(250,204,21,0.6)]" />
-            <Sparkles className="w-8 h-8 text-amber-200 absolute -top-2 -right-4 animate-bounce drop-shadow-[0_0_10px_rgba(253,230,138,0.8)]" />
+          <div className="relative mb-4">
+            <img src="/kjol-icon.png" alt="KJOL" className="w-24 h-24 md:w-28 md:h-28 drop-shadow-[0_0_25px_rgba(250,204,21,0.5)] object-contain" />
+            <Sparkles className="w-7 h-7 text-amber-200 absolute -top-1 -right-3 animate-bounce drop-shadow-[0_0_10px_rgba(253,230,138,0.8)]" />
           </div>
           
           <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-100 via-yellow-500 to-amber-700 tracking-tighter uppercase mb-3 drop-shadow-sm">
