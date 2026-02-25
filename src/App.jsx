@@ -76,6 +76,7 @@ export default function App() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isClearingCache, setIsClearingCache] = useState(false); 
   const [showApiKey, setShowApiKey] = useState(false);
+  const [yearSort, setYearSort] = useState('year-desc');
   const previousLevelsRef = useRef({});
   const fetchingRefs = useRef(new Set()); 
 
@@ -296,11 +297,18 @@ export default function App() {
     });
 
     const sortedYears = Object.entries(yearStats)
-      .map(([year, data]) => ({ year, xp: data.current, max: data.max, pct: (data.current/data.max)*100 }))
-      .sort((a, b) => b.xp - a.xp);
+      .map(([year, data]) => ({ year, xp: data.current, max: data.max, pct: (data.current/data.max)*100 }));
 
     return { jesperTotal, kimTotal, teamTotal, sortedYears };
   }, [progress, mergedMovies]);
+
+  const sortedYearsDisplay = useMemo(() => {
+    const years = [...stats.sortedYears];
+    if (yearSort === 'year-desc') years.sort((a, b) => b.year - a.year);
+    else if (yearSort === 'xp-desc') years.sort((a, b) => b.xp - a.xp);
+    else if (yearSort === 'pct-desc') years.sort((a, b) => b.pct - a.pct);
+    return years;
+  }, [stats.sortedYears, yearSort]);
 
   const badges = useMemo(() => {
     const unlocked = [];
@@ -642,11 +650,16 @@ export default function App() {
 
             {/* Årskampen */}
             <div className="bg-slate-900 rounded-3xl p-8 border border-white/5">
-              <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 mb-8 flex items-center gap-3">
+              <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 mb-4 flex items-center gap-3">
                 <Film className="text-yellow-500"/> Yearly Progress Levels
               </h3>
+              <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-8 w-fit">
+                <FilterButton active={yearSort === 'year-desc'} onClick={() => setYearSort('year-desc')} label="Chronological" />
+                <FilterButton active={yearSort === 'xp-desc'} onClick={() => setYearSort('xp-desc')} label="By XP" />
+                <FilterButton active={yearSort === 'pct-desc'} onClick={() => setYearSort('pct-desc')} label="By Progress" />
+              </div>
               <div className="space-y-6">
-                {stats.sortedYears.map(({ year, xp, pct }, index) => {
+                {sortedYearsDisplay.map(({ year, xp, pct }) => {
                   const level = getLevelInfo(pct);
                   return (
                     <div key={year} className="group">
