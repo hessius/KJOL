@@ -1027,12 +1027,19 @@ function ConfettiOverlay({ reason }) {
 }
 
 function MovieDetailModal({ movie, cache, progress, onClose }) {
+  const [showPoster, setShowPoster] = useState(false);
+
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const handleKey = (e) => { 
+      if (e.key === 'Escape') {
+        if (showPoster) setShowPoster(false);
+        else onClose();
+      }
+    };
     document.addEventListener('keydown', handleKey);
     document.body.style.overflow = 'hidden';
     return () => { document.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
-  }, [onClose]);
+  }, [onClose, showPoster]);
 
   const rottenTomatoes = cache?.Ratings?.find(r => r.Source === 'Rotten Tomatoes')?.Value;
   const xp = calculateXP(movie, progress.jesper, progress.kim);
@@ -1040,6 +1047,17 @@ function MovieDetailModal({ movie, cache, progress, onClose }) {
   return (
     <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+
+      {/* Poster lightbox */}
+      {showPoster && movie.poster && (
+        <div className="absolute inset-0 z-[95] flex items-center justify-center bg-black/95 cursor-pointer" onClick={(e) => { e.stopPropagation(); setShowPoster(false); }}>
+          <button onClick={() => setShowPoster(false)} className="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-colors z-10">
+            <X size={24} />
+          </button>
+          <img src={movie.poster} alt={movie.title} className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl shadow-2xl" />
+        </div>
+      )}
+
       <div 
         className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-slate-900 sm:rounded-3xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-bottom-6 duration-300"
         onClick={(e) => e.stopPropagation()}
@@ -1048,8 +1066,8 @@ function MovieDetailModal({ movie, cache, progress, onClose }) {
         <div className="relative h-64 w-full bg-slate-950 overflow-hidden">
           {movie.poster ? (
             <>
-              <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
+              <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover cursor-pointer" onClick={() => setShowPoster(true)} />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent pointer-events-none" />
             </>
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
