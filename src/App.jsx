@@ -78,6 +78,7 @@ export default function App() {
   const [isClearingCache, setIsClearingCache] = useState(false); 
   const [showApiKey, setShowApiKey] = useState(false);
   const [yearSort, setYearSort] = useState('year-desc');
+  const [top10Mode, setTop10Mode] = useState('together');
   const previousLevelsRef = useRef({});
   const fetchingRefs = useRef(new Set()); 
 
@@ -402,6 +403,34 @@ export default function App() {
       .slice(0, 10);
   }, [progress, mergedMovies]);
 
+  const top10Kim = useMemo(() => {
+    return mergedMovies
+      .filter(movie => !progress[movie.id]?.kim)
+      .map(movie => {
+        const multiplier = 1 + (movie.nominations * 0.10) + (movie.wins * 0.25);
+        const soloXp = Math.round(5 * multiplier);
+        const xpPerMin = movie.runtime > 0 ? (soloXp / movie.runtime).toFixed(2) : '0.00';
+        return { ...movie, remainingPotential: soloXp, xpPerMin };
+      })
+      .sort((a, b) => b.remainingPotential - a.remainingPotential)
+      .slice(0, 10);
+  }, [progress, mergedMovies]);
+
+  const top10Jesper = useMemo(() => {
+    return mergedMovies
+      .filter(movie => !progress[movie.id]?.jesper)
+      .map(movie => {
+        const multiplier = 1 + (movie.nominations * 0.10) + (movie.wins * 0.25);
+        const soloXp = Math.round(5 * multiplier);
+        const xpPerMin = movie.runtime > 0 ? (soloXp / movie.runtime).toFixed(2) : '0.00';
+        return { ...movie, remainingPotential: soloXp, xpPerMin };
+      })
+      .sort((a, b) => b.remainingPotential - a.remainingPotential)
+      .slice(0, 10);
+  }, [progress, mergedMovies]);
+
+  const activeTop10 = top10Mode === 'kim' ? top10Kim : top10Mode === 'jesper' ? top10Jesper : top10;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-yellow-500 gap-4">
@@ -561,11 +590,19 @@ export default function App() {
                 XP-Optimized Picks
               </h2>
               <p className="text-slate-400 text-sm max-w-lg mx-auto leading-relaxed">
-                These are the movies you should watch next to maximize your score! The list is sorted by the amount of <strong className="text-yellow-500 font-bold">Remaining XP</strong> you can grab.
+                {top10Mode === 'together' 
+                  ? <>These are the movies you should watch <strong className="text-yellow-500 font-bold">together</strong> to maximize your score!</>
+                  : <>Top picks for <strong className={`font-bold ${top10Mode === 'kim' ? 'text-pink-400' : 'text-blue-400'}`}>{top10Mode === 'kim' ? 'Kim' : 'Jesper'}</strong> to watch solo for maximum XP.</>
+                }
               </p>
+              <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mt-4 w-fit mx-auto">
+                <FilterButton active={top10Mode === 'together'} onClick={() => setTop10Mode('together')} label="Together" />
+                <FilterButton active={top10Mode === 'kim'} onClick={() => setTop10Mode('kim')} label="Kim" />
+                <FilterButton active={top10Mode === 'jesper'} onClick={() => setTop10Mode('jesper')} label="Jesper" />
+              </div>
             </div>
             
-            {top10.map((movie, index) => (
+            {activeTop10.map((movie, index) => (
               <div key={movie.id} className="group relative flex border border-slate-800 rounded-2xl p-5 items-center gap-4 sm:gap-5 hover:border-yellow-500/30 hover:shadow-[0_0_30px_rgba(234,179,8,0.05)] transition-all overflow-hidden min-h-[100px]">
                 {movie.poster ? (
                   <>
