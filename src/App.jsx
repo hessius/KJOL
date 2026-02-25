@@ -142,6 +142,7 @@ export default function App() {
     let isCancelled = false;
 
     const fetchMissing = async () => {
+      let delay = 600;
       for (const movie of missingMovies) {
         if (isCancelled) break;
         if (fetchingRefs.current.has(movie.imdb)) continue; 
@@ -150,7 +151,24 @@ export default function App() {
         
         try {
           const res = await fetch(`https://www.omdbapi.com/?i=${movie.imdb}&apikey=${omdbKey}&plot=short`);
+          
+          if (res.status === 503 || res.status === 429) {
+            console.warn(`OMDb rate limited (${res.status}), backing off...`);
+            fetchingRefs.current.delete(movie.imdb);
+            delay = Math.min(delay * 2, 10000);
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+          
+          if (!res.ok) {
+            console.warn(`OMDb returned ${res.status} for ${movie.imdb}`);
+            fetchingRefs.current.delete(movie.imdb);
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+          
           const data = await res.json();
+          delay = 600; // reset delay on success
           
           if (data.Response === "True" && data.imdbID === movie.imdb && !isCancelled) {
             const entry = { ...data, _cachedAt: new Date().toISOString() };
@@ -162,7 +180,7 @@ export default function App() {
           console.error("Background fetch failed for", movie.imdb, error);
         }
         
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, delay));
         fetchingRefs.current.delete(movie.imdb);
       }
     };
