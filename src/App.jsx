@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Star, Award, Film, Trophy, Popcorn, Search, CheckCircle2, Circle, Sparkles, Settings, ImageIcon, ArrowUpDown, Calendar, Clock, PlayCircle, ThumbsUp, ThumbsDown, Medal, Flame, Users, Clapperboard, Database, RefreshCw, Trash2, Zap } from 'lucide-react';
+import { Star, Award, Film, Trophy, Popcorn, Search, CheckCircle2, Circle, Sparkles, Settings, ImageIcon, ArrowUpDown, Calendar, Clock, PlayCircle, ThumbsUp, ThumbsDown, Medal, Flame, Users, Clapperboard, Database, RefreshCw, Trash2, Zap, Eye, EyeOff } from 'lucide-react';
 import { MOVIES as INITIAL_MOVIES } from './data/movies';
 
 // ============================================================================
@@ -75,6 +75,7 @@ export default function App() {
   
   const [showConfetti, setShowConfetti] = useState(false);
   const [isClearingCache, setIsClearingCache] = useState(false); 
+  const [showApiKey, setShowApiKey] = useState(false);
   const previousLevelsRef = useRef({});
   const fetchingRefs = useRef(new Set()); 
 
@@ -712,13 +713,22 @@ export default function App() {
 
                 <div className="pt-2">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Your OMDb API Key</label>
-                  <input 
-                    type="text" 
-                    value={omdbKey}
-                    onChange={(e) => handleSaveOmdbKey(e.target.value)}
-                    placeholder="e.g. a1b2c3d4"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-4 text-slate-200 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all font-mono mb-2"
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showApiKey ? "text" : "password"} 
+                      value={omdbKey}
+                      onChange={(e) => handleSaveOmdbKey(e.target.value)}
+                      placeholder="e.g. a1b2c3d4"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-4 pr-12 text-slate-200 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all font-mono mb-2"
+                    />
+                    <button
+                      onClick={() => setShowApiKey(v => !v)}
+                      className="absolute right-3 top-3 text-slate-500 hover:text-yellow-400 transition-colors"
+                      title={showApiKey ? 'Hide API key' : 'Show API key'}
+                    >
+                      {showApiKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                   {omdbKey && (
                     <p className="text-green-500 text-xs flex items-center gap-1.5 font-medium">
                       <CheckCircle2 size={16} /> Key saved.
@@ -991,7 +1001,7 @@ function MovieCard({ movie, progress, onToggle, onRating, onClearCache }) {
             <PlayCircle size={14} /> Trailer
           </a>
           <a 
-            href={`https://www.justwatch.com/se/sok?q=${encodeURIComponent(movie.title)}`} 
+            href={`https://www.justwatch.com/se/search?q=${encodeURIComponent(movie.title)}`} 
             target="_blank" 
             rel="noreferrer"
             className="flex-[1.5] flex items-center justify-center gap-1.5 bg-slate-950 text-slate-300 text-[11px] font-bold py-2.5 rounded-xl hover:bg-slate-800 transition-colors border border-white/5 hover:border-white/10"
