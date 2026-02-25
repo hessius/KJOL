@@ -367,14 +367,12 @@ export default function App() {
           </div>
           
           <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-100 via-yellow-500 to-amber-700 tracking-tighter uppercase mb-3 drop-shadow-sm">
-            Oscar Tracker
+            KJOL
           </h1>
           
-          <div className="flex items-center gap-4 bg-black/40 px-6 py-2 rounded-full border border-yellow-500/20 backdrop-blur-sm">
-            <span className="text-blue-400 font-bold uppercase tracking-wider text-sm">Jesper</span>
-            <span className="text-yellow-500/50 text-xs">&</span>
-            <span className="text-pink-400 font-bold uppercase tracking-wider text-sm">Kim</span>
-          </div>
+          <p className="text-sm md:text-base text-slate-400 tracking-wide mb-3">
+            <span className="text-blue-400 font-bold">K</span>im &amp; <span className="text-pink-400 font-bold">J</span>esper's <span className="text-yellow-400 font-bold">O</span>scar <span className="text-yellow-400 font-bold">L</span>ist
+          </p>
 
           <div className="mt-8 w-full max-w-md mx-auto">
             <div className="flex justify-between text-xs text-slate-400 font-medium mb-2 px-1">

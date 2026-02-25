@@ -4,7 +4,7 @@ services:
     container_name: kjol
     restart: unless-stopped
     ports:
-      - "0550:3000"
+      - "8357:3000"
     volumes:
       - kjol-data:/app/data
     environment:
