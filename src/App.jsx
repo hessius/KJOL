@@ -364,6 +364,58 @@ export default function App() {
     const oldieTier = getTier(oldies, [3, 5, 10]);
     if (oldieTier) unlocked.push({ id: 'time', title: 'Time Travelers', desc: `Watched ${oldies} older classics (pre-2011).`, icon: <Star />, ...oldieTier });
 
+    // --- MILESTONE BADGES ---
+
+    // Best Picture Buff — completed all movies in a single year (together)
+    const completedYears = stats.sortedYears.filter(y => y.pct >= 99.9);
+    if (completedYears.length > 0) {
+      unlocked.push({ id: 'bestpicture', title: 'Best Picture Buff', desc: `Completed all movies in ${completedYears.map(y => y.year).join(', ')}.`, icon: <Award />, tier: 0, borderColor: 'border-yellow-500/30', bgColor: 'bg-yellow-500/10' });
+    }
+
+    // Oscar Sweep — watched a movie that won 4+ Oscars
+    const sweepMovies = mergedMovies.filter(m => m.wins >= 4 && (progress[m.id]?.jesper || progress[m.id]?.kim)).length;
+    const sweepTier = getTier(sweepMovies, [1, 3, 5]);
+    if (sweepTier) unlocked.push({ id: 'sweep', title: 'Oscar Sweep', desc: `Watched ${sweepMovies} movies with 4+ Oscar wins.`, icon: <Trophy />, ...sweepTier });
+
+    // Century Club — watched 100+ movies (either person)
+    const jesperWatched = mergedMovies.filter(m => progress[m.id]?.jesper).length;
+    const kimWatched = mergedMovies.filter(m => progress[m.id]?.kim).length;
+    const maxWatched = Math.max(jesperWatched, kimWatched);
+    if (maxWatched >= 100) unlocked.push({ id: 'century', title: 'Century Club', desc: `${maxWatched} movies watched by one person!`, icon: <Film />, tier: 0, borderColor: 'border-purple-500/30', bgColor: 'bg-purple-500/10' });
+
+    // Dynamic Duo — watched 50+ movies together
+    const togetherCount = mergedMovies.filter(m => progress[m.id]?.jesper && progress[m.id]?.kim).length;
+    const duoTier = getTier(togetherCount, [25, 50, 100]);
+    if (duoTier) unlocked.push({ id: 'duo', title: 'Dynamic Duo', desc: `Watched ${togetherCount} movies together.`, icon: <Users />, ...duoTier });
+
+    // Genre Explorer — watched movies spanning 5+ different genres
+    const watchedGenres = new Set();
+    mergedMovies.forEach(m => {
+      if ((progress[m.id]?.jesper || progress[m.id]?.kim) && m.genre) {
+        m.genre.split(', ').forEach(g => watchedGenres.add(g));
+      }
+    });
+    if (watchedGenres.size >= 5) unlocked.push({ id: 'genre', title: 'Genre Explorer', desc: `Explored ${watchedGenres.size} different genres.`, icon: <Popcorn />, tier: 0, borderColor: 'border-green-500/30', bgColor: 'bg-green-500/10' });
+
+    // Decade Diver — watched movies from 3+ different decades
+    const watchedDecades = new Set();
+    mergedMovies.forEach(m => {
+      if (progress[m.id]?.jesper || progress[m.id]?.kim) watchedDecades.add(Math.floor(m.year / 10) * 10);
+    });
+    if (watchedDecades.size >= 3) unlocked.push({ id: 'decade', title: 'Decade Diver', desc: `Spanning ${watchedDecades.size} different decades.`, icon: <Calendar />, tier: 0, borderColor: 'border-sky-500/30', bgColor: 'bg-sky-500/10' });
+
+    // Critics' Darling — watched 10+ movies with 8.0+ IMDb rating
+    const highRated = mergedMovies.filter(m => 
+      (progress[m.id]?.jesper || progress[m.id]?.kim) && m.imdbRating && parseFloat(m.imdbRating) >= 8.0
+    ).length;
+    const criticTier = getTier(highRated, [5, 10, 20]);
+    if (criticTier) unlocked.push({ id: 'darling', title: "Critics' Darling", desc: `Watched ${highRated} movies rated 8.0+ on IMDb.`, icon: <Sparkles />, ...criticTier });
+
+    // Underdog Fan — watched 5+ movies with 0 wins
+    const underdogs = mergedMovies.filter(m => m.wins === 0 && (progress[m.id]?.jesper || progress[m.id]?.kim)).length;
+    const underdogTier = getTier(underdogs, [3, 5, 10]);
+    if (underdogTier) unlocked.push({ id: 'underdog', title: 'Underdog Fan', desc: `Watched ${underdogs} movies with zero wins.`, icon: <ThumbsDown />, ...underdogTier });
+
     return unlocked;
   }, [progress, stats, mergedMovies]);
 
