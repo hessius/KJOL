@@ -80,6 +80,9 @@ export default function App() {
   const [yearSort, setYearSort] = useState('year-desc');
   const [top10Mode, setTop10Mode] = useState('together');
   const [selectedMovie, setSelectedMovie] = useState(null);
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [selectedDecade, setSelectedDecade] = useState('all');
+  const [minNominations, setMinNominations] = useState(0);
   const previousLevelsRef = useRef({});
   const fetchingRefs = useRef(new Set()); 
 
@@ -133,6 +136,19 @@ export default function App() {
   const availableYears = useMemo(() => {
     const years = mergedMovies.map(m => m.year);
     return [...new Set(years)].sort((a, b) => b - a);
+  }, [mergedMovies]);
+
+  const availableGenres = useMemo(() => {
+    const genreSet = new Set();
+    mergedMovies.forEach(m => {
+      if (m.genre) m.genre.split(', ').forEach(g => genreSet.add(g));
+    });
+    return [...genreSet].sort();
+  }, [mergedMovies]);
+
+  const availableDecades = useMemo(() => {
+    const decades = new Set(mergedMovies.map(m => Math.floor(m.year / 10) * 10));
+    return [...decades].sort((a, b) => b - a);
   }, [mergedMovies]);
 
   // Progress and cache are persisted server-side on each write — no local effects needed.
@@ -355,6 +371,13 @@ export default function App() {
     let result = mergedMovies.filter(movie => {
       if (searchQuery && !movie.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedYear !== 'all' && movie.year.toString() !== selectedYear.toString()) return false;
+      if (selectedDecade !== 'all' && Math.floor(movie.year / 10) * 10 !== parseInt(selectedDecade)) return false;
+      if (minNominations > 0 && movie.nominations < minNominations) return false;
+      if (selectedGenres.length > 0 && movie.genre) {
+        const movieGenres = movie.genre.split(', ');
+        if (!selectedGenres.some(g => movieGenres.includes(g))) return false;
+      }
+      if (selectedGenres.length > 0 && !movie.genre) return false;
 
       const p = progress[movie.id] || { jesper: false, kim: false };
       switch (filterMode) {
@@ -370,6 +393,8 @@ export default function App() {
       if (sortBy === 'year-desc') return b.year - a.year;
       if (sortBy === 'year-asc') return a.year - b.year;
       if (sortBy === 'title-asc') return a.title.localeCompare(b.title);
+      if (sortBy === 'nom-desc') return b.nominations - a.nominations;
+      if (sortBy === 'runtime-asc') return (a.runtime || 999) - (b.runtime || 999);
       if (sortBy === 'xp-desc') {
         return calculateXP(b, false, false).maxPotential - calculateXP(a, false, false).maxPotential;
       }
@@ -386,7 +411,7 @@ export default function App() {
     });
 
     return result;
-  }, [progress, searchQuery, filterMode, selectedYear, sortBy, mergedMovies]);
+  }, [progress, searchQuery, filterMode, selectedYear, selectedDecade, selectedGenres, minNominations, sortBy, mergedMovies]);
 
   const top10 = useMemo(() => {
     return mergedMovies
@@ -555,6 +580,8 @@ export default function App() {
                       <option value="xp-desc">Potential Max XP</option>
                       <option value="xp-min-desc">XP/Min (Best Value)</option>
                       <option value="title-asc">Title (A-Z)</option>
+                      <option value="nom-desc">Nominations (Most)</option>
+                      <option value="runtime-asc">Runtime (Shortest)</option>
                     </select>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                       <ArrowUpDown size={14} className="text-slate-600" />
@@ -563,6 +590,35 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Secondary filter row: Genre, Decade, Nominations */}
+            {(availableGenres.length > 0 || availableDecades.length > 0) && (
+              <div className="flex flex-wrap gap-3 items-center bg-slate-900/30 p-3 rounded-2xl border border-white/5">
+                {availableGenres.length > 0 && (
+                  <select
+                    value={selectedGenres.length === 0 ? '' : selectedGenres[0]}
+                    onChange={(e) => setSelectedGenres(e.target.value ? [e.target.value] : [])}
+                    className="appearance-none bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs text-slate-300 focus:outline-none focus:border-yellow-500/50 cursor-pointer"
+                  >
+                    <option value="">All Genres</option>
+                    {availableGenres.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                )}
+                
+                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full custom-scrollbar">
+                  <FilterButton active={selectedDecade === 'all'} onClick={() => setSelectedDecade('all')} label="All Decades" />
+                  {availableDecades.map(d => (
+                    <FilterButton key={d} active={selectedDecade === d.toString()} onClick={() => setSelectedDecade(d.toString())} label={`${d}s`} />
+                  ))}
+                </div>
+
+                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+                  <FilterButton active={minNominations === 0} onClick={() => setMinNominations(0)} label="Any Noms" />
+                  <FilterButton active={minNominations === 5} onClick={() => setMinNominations(5)} label="5+" />
+                  <FilterButton active={minNominations === 10} onClick={() => setMinNominations(10)} label="10+" />
+                </div>
+              </div>
+            )}
 
             <div className="text-sm text-slate-500 px-2 font-medium flex justify-between">
               <span>Showing <span className="text-yellow-500">{filteredMovies.length}</span> of {totalMovies} movies</span>
