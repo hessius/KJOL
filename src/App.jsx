@@ -535,14 +535,22 @@ export default function App() {
         />
       )}
 
-      <header className="relative bg-gradient-to-b from-yellow-900/40 via-slate-900 to-slate-950 border-b border-yellow-500/20 pt-[calc(4rem+env(safe-area-inset-top))] pb-10 px-4 text-center overflow-hidden">
-        <div className="absolute top-[-50%] left-[-10%] w-[120%] h-[200%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-400/10 via-transparent to-transparent animate-[pulse_8s_ease-in-out_infinite] pointer-events-none" />
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none mix-blend-overlay"></div>
+      <header className="relative bg-gradient-to-b from-yellow-900/40 via-slate-900 to-slate-950 border-b border-yellow-500/20 pt-[calc(4rem+env(safe-area-inset-top))] pb-10 px-4 text-center">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-50%] left-[-10%] w-[120%] h-[200%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-400/10 via-transparent to-transparent animate-[pulse_8s_ease-in-out_infinite]" />
+          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay"></div>
+        </div>
         
         <div className="relative z-10 flex flex-col items-center">
-          <div className="relative mb-4">
+          <div className="relative mb-4 p-6">
             <img src="/kjol-icon.png" alt="KJOL" className="w-24 h-24 md:w-28 md:h-28 drop-shadow-[0_0_25px_rgba(250,204,21,0.5)] object-contain" />
-            <Sparkles className="w-7 h-7 text-amber-200 absolute -top-1 -right-3 animate-bounce drop-shadow-[0_0_10px_rgba(253,230,138,0.8)]" />
+            {/* Red carpet flash sparkles */}
+            <div className="absolute -top-2 -right-2 w-3 h-3 bg-yellow-200 rounded-full animate-[flash_2s_ease-in-out_infinite] opacity-0" />
+            <div className="absolute -top-1 right-6 w-2 h-2 bg-white rounded-full animate-[flash_2.5s_ease-in-out_infinite_0.3s] opacity-0" />
+            <div className="absolute top-4 -right-4 w-2.5 h-2.5 bg-amber-300 rounded-full animate-[flash_3s_ease-in-out_infinite_0.8s] opacity-0" />
+            <div className="absolute -top-3 left-2 w-2 h-2 bg-yellow-100 rounded-full animate-[flash_2.8s_ease-in-out_infinite_1.2s] opacity-0" />
+            <div className="absolute top-2 -left-3 w-2 h-2 bg-white rounded-full animate-[flash_2.2s_ease-in-out_infinite_0.5s] opacity-0" />
+            <div className="absolute bottom-2 -right-2 w-1.5 h-1.5 bg-amber-200 rounded-full animate-[flash_3.2s_ease-in-out_infinite_1.5s] opacity-0" />
           </div>
           
           <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-100 via-yellow-500 to-amber-700 tracking-tighter uppercase mb-3 drop-shadow-sm">
