@@ -111,7 +111,7 @@ app.put('/api/settings/:key', (req, res) => {
 // ============================================================================
 // SERVE FRONTEND (production)
 // ============================================================================
-const distPath = path.join(__dirname, '..', 'dist');
+const distPath = process.env.DIST_PATH || path.join(__dirname, '..', 'dist');
 app.use(express.static(distPath));
 app.get('/{*splat}', (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));

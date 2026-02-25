@@ -34,6 +34,7 @@ RUN mkdir -p /app/data
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV DB_PATH=/app/data/kjol.json
+ENV DIST_PATH=/app/dist
 
 EXPOSE 3000
 
