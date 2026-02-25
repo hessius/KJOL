@@ -2,6 +2,10 @@
 
 html, body {
   background-color: #0f172a;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* iOS safe area insets for PWA */
