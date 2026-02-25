@@ -316,23 +316,35 @@ export default function App() {
 
   const badges = useMemo(() => {
     const unlocked = [];
-    const nightOwls = mergedMovies.some(m => m.runtime >= 180 && progress[m.id]?.jesper && progress[m.id]?.kim);
-    if (nightOwls) unlocked.push({ id: 'night', title: 'Night Owls', desc: 'Watched a 3h+ movie together.', icon: <Clock /> });
+    
+    const getTier = (count, thresholds) => {
+      if (count >= thresholds[2]) return { tier: 3, label: 'Gold', stars: '⭐⭐⭐', borderColor: 'border-yellow-400', bgColor: 'bg-yellow-500/15' };
+      if (count >= thresholds[1]) return { tier: 2, label: 'Silver', stars: '⭐⭐', borderColor: 'border-slate-300', bgColor: 'bg-slate-300/10' };
+      if (count >= thresholds[0]) return { tier: 1, label: 'Bronze', stars: '⭐', borderColor: 'border-amber-700', bgColor: 'bg-amber-700/10' };
+      return null;
+    };
+
+    const nightOwlCount = mergedMovies.filter(m => m.runtime >= 180 && progress[m.id]?.jesper && progress[m.id]?.kim).length;
+    const nightTier = getTier(nightOwlCount, [1, 3, 5]);
+    if (nightTier) unlocked.push({ id: 'night', title: 'Night Owls', desc: `Watched ${nightOwlCount} movies over 3h together.`, icon: <Clock />, ...nightTier });
 
     const shortMovies = mergedMovies.filter(m => m.runtime < 120 && progress[m.id]?.jesper && progress[m.id]?.kim).length;
-    if (shortMovies >= 3) unlocked.push({ id: 'short', title: 'Parent Hacks', desc: 'Watched 3 movies under 2 hours.', icon: <Flame /> });
+    const shortTier = getTier(shortMovies, [3, 5, 10]);
+    if (shortTier) unlocked.push({ id: 'short', title: 'Parent Hacks', desc: `Watched ${shortMovies} movies under 2h together.`, icon: <Flame />, ...shortTier });
 
     const agreedCount = mergedMovies.filter(m => {
       const p = progress[m.id];
       return p?.jesperRating && p?.kimRating && p.jesperRating === p.kimRating;
     }).length;
-    if (agreedCount >= 3) unlocked.push({ id: 'agree', title: 'Perfect Harmony', desc: 'Gave the same rating on 3 movies.', icon: <ThumbsUp /> });
+    const agreeTier = getTier(agreedCount, [3, 5, 10]);
+    if (agreeTier) unlocked.push({ id: 'agree', title: 'Perfect Harmony', desc: `Gave the same rating on ${agreedCount} movies.`, icon: <ThumbsUp />, ...agreeTier });
 
     const reachedCritic = stats.sortedYears.some(y => y.pct >= 75);
-    if (reachedCritic) unlocked.push({ id: 'critic', title: 'Cinephiles', desc: 'Reached the Critic level (75%) for a year.', icon: <Medal /> });
+    if (reachedCritic) unlocked.push({ id: 'critic', title: 'Cinephiles', desc: 'Reached the Critic level (75%) for a year.', icon: <Medal />, tier: 0, borderColor: 'border-yellow-500/30', bgColor: 'bg-yellow-500/10' });
 
     const oldies = mergedMovies.filter(m => m.year <= 2010 && progress[m.id]?.jesper && progress[m.id]?.kim).length;
-    if (oldies >= 3) unlocked.push({ id: 'time', title: 'Time Travelers', desc: 'Watched 3+ older classics (pre-2011).', icon: <Star /> });
+    const oldieTier = getTier(oldies, [3, 5, 10]);
+    if (oldieTier) unlocked.push({ id: 'time', title: 'Time Travelers', desc: `Watched ${oldies} older classics (pre-2011).`, icon: <Star />, ...oldieTier });
 
     return unlocked;
   }, [progress, stats, mergedMovies]);
@@ -611,11 +623,12 @@ export default function App() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {badges.map(b => (
-                    <div key={b.id} className="bg-gradient-to-br from-slate-800 to-slate-900 border border-yellow-500/30 rounded-2xl p-4 flex flex-col items-center text-center group hover:border-yellow-400 transition-colors shadow-lg">
-                      <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 mb-3 group-hover:scale-110 transition-transform">
+                    <div key={b.id} className={`bg-gradient-to-br from-slate-800 to-slate-900 ${b.borderColor || 'border-yellow-500/30'} border rounded-2xl p-4 flex flex-col items-center text-center group hover:border-yellow-400 transition-colors shadow-lg`}>
+                      <div className={`w-12 h-12 rounded-full ${b.bgColor || 'bg-yellow-500/10'} flex items-center justify-center text-yellow-500 mb-3 group-hover:scale-110 transition-transform`}>
                         {b.icon}
                       </div>
                       <h4 className="font-bold text-slate-200 text-sm mb-1">{b.title}</h4>
+                      {b.stars && <div className="text-xs mb-1">{b.stars}</div>}
                       <p className="text-xs text-slate-400 leading-tight">{b.desc}</p>
                     </div>
                   ))}
