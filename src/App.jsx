@@ -170,8 +170,29 @@ export default function App() {
           const data = await res.json();
           delay = 600; // reset delay on success
           
-          if (data.Response === "True" && data.imdbID === movie.imdb && !isCancelled) {
-            const entry = { ...data, _cachedAt: new Date().toISOString() };
+          let movieData = null;
+          if (data.Response === "True" && data.imdbID === movie.imdb) {
+            movieData = data;
+          } else {
+            // Fallback: search by title + year (handles IDs not yet indexed by OMDb)
+            try {
+              const titleParam = encodeURIComponent(movie.title);
+              const fbRes = await fetch(`https://www.omdbapi.com/?t=${titleParam}&y=${movie.year}&apikey=${omdbKey}&plot=short`);
+              if (fbRes.status === 503 || fbRes.status === 429) {
+                delay = Math.min(delay * 2, 10000);
+              } else if (fbRes.ok) {
+                const fbData = await fbRes.json();
+                if (fbData.Response === "True") {
+                  movieData = fbData;
+                }
+              }
+            } catch (fbErr) {
+              console.warn("Title search fallback failed for", movie.title, fbErr);
+            }
+          }
+          
+          if (movieData && !isCancelled) {
+            const entry = { ...movieData, _cachedAt: new Date().toISOString() };
             setOmdbCache(prev => ({ ...prev, [movie.imdb]: entry }));
             // Persist to server
             apiPost('/cache', { imdbId: movie.imdb, data: entry }).catch(e => console.error('Cache save failed:', e));

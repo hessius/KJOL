@@ -34,3 +34,4 @@ resources/
 backend/data/
 backend/node_modules/
 *.db
+kjol-backup-*.json
