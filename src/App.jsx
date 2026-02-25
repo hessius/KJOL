@@ -566,16 +566,24 @@ export default function App() {
             </div>
             
             {top10.map((movie, index) => (
-              <div key={movie.id} className="group relative flex bg-gradient-to-r from-slate-900 to-slate-900/50 border border-slate-800 rounded-2xl p-5 items-center gap-4 sm:gap-5 hover:border-yellow-500/30 hover:shadow-[0_0_30px_rgba(234,179,8,0.05)] transition-all overflow-hidden">
+              <div key={movie.id} className="group relative flex border border-slate-800 rounded-2xl p-5 items-center gap-4 sm:gap-5 hover:border-yellow-500/30 hover:shadow-[0_0_30px_rgba(234,179,8,0.05)] transition-all overflow-hidden min-h-[100px]">
+                {movie.poster ? (
+                  <>
+                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${movie.poster})` }} />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/85 to-slate-950/75" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-r from-slate-900 to-slate-900/50" />
+                )}
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-yellow-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 
-                <div className="text-3xl sm:text-4xl font-black text-slate-800 w-10 sm:w-12 text-center group-hover:text-yellow-500/20 transition-colors">
+                <div className="relative text-3xl sm:text-4xl font-black text-white/20 w-10 sm:w-12 text-center group-hover:text-yellow-500/30 transition-colors drop-shadow-lg">
                   {index + 1}
                 </div>
                 
-                <div className="flex-1">
-                  <h3 className="text-lg sm:text-xl font-bold text-slate-100 mb-1">
-                    {movie.title} <span className="text-xs sm:text-sm font-medium text-slate-500 ml-2 bg-slate-950 px-2 py-0.5 rounded-md border border-white/5">{movie.year}</span>
+                <div className="relative flex-1">
+                  <h3 className="text-lg sm:text-xl font-bold text-slate-100 mb-1 drop-shadow-md">
+                    {movie.title} <span className="text-xs sm:text-sm font-medium text-slate-400 ml-2 bg-slate-950/70 px-2 py-0.5 rounded-md border border-white/10">{movie.year}</span>
                   </h3>
                   <div className="flex flex-wrap gap-3 sm:gap-4 text-xs font-semibold text-amber-500/80 mt-2">
                     <span className="flex items-center gap-1.5"><Star size={14} /> {movie.nominations} Nom</span>
@@ -584,8 +592,8 @@ export default function App() {
                   </div>
                 </div>
                 
-                <div className="text-right flex flex-col items-end shrink-0">
-                  <div className="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Remaining XP</div>
+                <div className="relative text-right flex flex-col items-end shrink-0">
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-slate-400 mb-1">Remaining XP</div>
                   <div className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 to-yellow-600">
                     +{movie.remainingPotential}
                   </div>
