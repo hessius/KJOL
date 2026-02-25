@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Star, Award, Film, Trophy, Popcorn, Search, CheckCircle2, Circle, Sparkles, Settings, ImageIcon, ArrowUpDown, Calendar, Clock, PlayCircle, ThumbsUp, ThumbsDown, Medal, Flame, Users, Clapperboard, Database, RefreshCw, Trash2, Zap, Eye, EyeOff } from 'lucide-react';
+import { Star, Award, Film, Trophy, Popcorn, Search, CheckCircle2, Circle, Sparkles, Settings, ImageIcon, ArrowUpDown, Calendar, Clock, PlayCircle, ThumbsUp, ThumbsDown, Medal, Flame, Users, Clapperboard, Database, RefreshCw, Trash2, Zap, Eye, EyeOff, X, ExternalLink } from 'lucide-react';
 import { MOVIES as INITIAL_MOVIES } from './data/movies';
 
 // ============================================================================
@@ -79,6 +79,7 @@ export default function App() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [yearSort, setYearSort] = useState('year-desc');
   const [top10Mode, setTop10Mode] = useState('together');
+  const [selectedMovie, setSelectedMovie] = useState(null);
   const previousLevelsRef = useRef({});
   const fetchingRefs = useRef(new Set()); 
 
@@ -448,6 +449,14 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans pb-20 selection:bg-yellow-500/30 relative">
       
       {showConfetti && <ConfettiOverlay reason={confettiReason} />}
+      {selectedMovie && (
+        <MovieDetailModal 
+          movie={selectedMovie} 
+          cache={omdbCache[selectedMovie.imdb]} 
+          progress={progress[selectedMovie.id] || { jesper: false, kim: false }} 
+          onClose={() => setSelectedMovie(null)} 
+        />
+      )}
 
       <header className="relative bg-gradient-to-b from-yellow-900/40 via-slate-900 to-slate-950 border-b border-yellow-500/20 pt-[calc(4rem+env(safe-area-inset-top))] pb-10 px-4 text-center overflow-hidden">
         <div className="absolute top-[-50%] left-[-10%] w-[120%] h-[200%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-400/10 via-transparent to-transparent animate-[pulse_8s_ease-in-out_infinite] pointer-events-none" />
@@ -574,6 +583,7 @@ export default function App() {
                     onToggle={handleToggle}
                     onRating={handleRating}
                     onClearCache={handleClearCache}
+                    onSelect={() => setSelectedMovie(movie)}
                   />
                 ))}
               </div>
@@ -900,6 +910,152 @@ function ConfettiOverlay({ reason }) {
   );
 }
 
+function MovieDetailModal({ movie, cache, progress, onClose }) {
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleKey);
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
+  }, [onClose]);
+
+  const rottenTomatoes = cache?.Ratings?.find(r => r.Source === 'Rotten Tomatoes')?.Value;
+  const xp = calculateXP(movie, progress.jesper, progress.kim);
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+      <div 
+        className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-slate-900 sm:rounded-3xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-bottom-6 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Poster header */}
+        <div className="relative h-64 w-full bg-slate-950 overflow-hidden">
+          {movie.poster ? (
+            <>
+              <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
+              <Film className="w-16 h-16 text-slate-700" />
+            </div>
+          )}
+          <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-colors z-10">
+            <X size={20} />
+          </button>
+          <div className="absolute bottom-4 left-6 right-6 z-10">
+            <h2 className="text-3xl font-black text-white drop-shadow-lg">{movie.title}</h2>
+            <div className="flex flex-wrap gap-3 mt-2 text-xs font-semibold">
+              <span className="bg-slate-950/70 text-slate-300 px-2 py-1 rounded-lg border border-white/10">{movie.year}</span>
+              {cache?.Rated && cache.Rated !== 'N/A' && <span className="bg-slate-950/70 text-slate-300 px-2 py-1 rounded-lg border border-white/10">{cache.Rated}</span>}
+              {movie.runtime > 0 && <span className="bg-slate-950/70 text-slate-300 px-2 py-1 rounded-lg border border-white/10">{movie.runtime} min</span>}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* XP & Ratings row */}
+          <div className="flex flex-wrap gap-3">
+            <div className="bg-amber-950/40 border border-amber-500/30 text-amber-400 text-sm font-black px-3 py-2 rounded-xl flex items-center gap-2">
+              <Zap size={16} /> {xp.total} / {xp.maxPotential} XP
+            </div>
+            {movie.imdbRating && (
+              <div className="bg-slate-950 border border-yellow-500/30 text-yellow-500 text-sm font-bold px-3 py-2 rounded-xl flex items-center gap-2">
+                <Star size={14} className="fill-yellow-500" /> {movie.imdbRating} IMDb
+              </div>
+            )}
+            {rottenTomatoes && (
+              <div className="bg-slate-950 border border-red-500/30 text-red-400 text-sm font-bold px-3 py-2 rounded-xl">
+                🍅 {rottenTomatoes}
+              </div>
+            )}
+          </div>
+
+          {/* Genre */}
+          {movie.genre && (
+            <div className="flex flex-wrap gap-2">
+              {movie.genre.split(', ').map(g => (
+                <span key={g} className="text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-800/60 px-2.5 py-1 rounded-lg border border-white/5">{g}</span>
+              ))}
+            </div>
+          )}
+
+          {/* Oscar stats */}
+          <div className="flex gap-4 py-3 border-y border-white/5">
+            <div className="flex items-center gap-2 text-sm text-yellow-500 font-bold">
+              <Award size={16} /> {movie.nominations} Nominations, {movie.wins} Wins
+            </div>
+          </div>
+
+          {/* Plot */}
+          {(cache?.Plot || movie.plot) && (
+            <p className="text-sm text-slate-300 leading-relaxed">{cache?.Plot && cache.Plot !== 'N/A' ? cache.Plot : movie.plot}</p>
+          )}
+
+          {/* Director & Cast */}
+          {movie.director && (
+            <div className="space-y-2 text-sm">
+              <div className="flex items-start gap-2">
+                <Clapperboard size={14} className="text-slate-500 mt-0.5 shrink-0" />
+                <span className="text-slate-400"><strong className="text-slate-300">Director:</strong> {movie.director}</span>
+              </div>
+              {movie.actors && (
+                <div className="flex items-start gap-2">
+                  <Users size={14} className="text-slate-500 mt-0.5 shrink-0" />
+                  <span className="text-slate-400"><strong className="text-slate-300">Cast:</strong> {movie.actors}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Watch status */}
+          <div className="bg-slate-950 rounded-2xl p-4 border border-white/5">
+            <div className="text-xs uppercase tracking-widest font-bold text-slate-500 mb-3">Watch Status</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`flex items-center gap-2 p-3 rounded-xl border ${progress.jesper ? 'bg-blue-900/20 border-blue-500/40 text-blue-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                {progress.jesper ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+                <span className="font-bold text-sm">Jesper</span>
+                {progress.jesperRating === 'up' && <ThumbsUp size={14} className="ml-auto fill-blue-400" />}
+                {progress.jesperRating === 'down' && <ThumbsDown size={14} className="ml-auto fill-red-400" />}
+              </div>
+              <div className={`flex items-center gap-2 p-3 rounded-xl border ${progress.kim ? 'bg-pink-900/20 border-pink-500/40 text-pink-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                {progress.kim ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+                <span className="font-bold text-sm">Kim</span>
+                {progress.kimRating === 'up' && <ThumbsUp size={14} className="ml-auto fill-pink-400" />}
+                {progress.kimRating === 'down' && <ThumbsDown size={14} className="ml-auto fill-red-400" />}
+              </div>
+            </div>
+          </div>
+
+          {/* Links */}
+          <div className="flex gap-2">
+            <a 
+              href={`https://www.imdb.com/title/${movie.imdb}/`} 
+              target="_blank" 
+              rel="noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 font-bold text-sm py-3 rounded-xl hover:bg-yellow-500/20 transition-colors"
+            >
+              <ExternalLink size={16} /> IMDb
+            </a>
+            <a 
+              href={`https://www.justwatch.com/se/search?q=${encodeURIComponent(movie.title)}`} 
+              target="_blank" 
+              rel="noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 bg-slate-800 text-slate-300 border border-white/10 font-bold text-sm py-3 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <Search size={16} /> Where to Watch
+            </a>
+          </div>
+
+          {!cache && (
+            <p className="text-center text-xs text-slate-500 italic">No cached OMDb data for this movie. Set an API key in Settings to fetch details.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OscarStatue({ filled, className }) {
   return (
     <svg 
@@ -964,7 +1120,7 @@ function StatCard({ title, value, icon, isMain, colorClass = 'text-slate-100' })
   );
 }
 
-function MovieCard({ movie, progress, onToggle, onRating, onClearCache }) {
+function MovieCard({ movie, progress, onToggle, onRating, onClearCache, onSelect }) {
   const [imgError, setImgError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -989,7 +1145,7 @@ function MovieCard({ movie, progress, onToggle, onRating, onClearCache }) {
         <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent pointer-events-none z-0" />
       )}
       
-      <div className="relative h-80 w-full bg-slate-950 border-b border-white/5 shrink-0 overflow-hidden flex items-center justify-center">
+      <div className="relative h-80 w-full bg-slate-950 border-b border-white/5 shrink-0 overflow-hidden flex items-center justify-center cursor-pointer" onClick={onSelect}>
         
         {/* Oscars Overlay Top Right */}
         <div className="absolute top-3 right-3 flex flex-wrap justify-end gap-1.5 max-w-[70%] z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
