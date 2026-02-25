@@ -542,8 +542,9 @@ export default function App() {
         </div>
         
         <div className="relative z-10 flex flex-col items-center">
-          <div className="relative mb-4 p-6">
-            <img src="/kjol-icon.png" alt="KJOL" className="w-24 h-24 md:w-28 md:h-28 drop-shadow-[0_0_25px_rgba(250,204,21,0.5)] object-contain" />
+          <div className="relative mb-4 p-10">
+            <div className="absolute inset-0 m-auto w-32 h-32 md:w-36 md:h-36 rounded-full bg-yellow-400/20 blur-2xl pointer-events-none" />
+            <img src="/kjol-icon.png" alt="KJOL" className="relative w-24 h-24 md:w-28 md:h-28 object-contain" />
             {/* Red carpet flash sparkles */}
             <div className="absolute -top-2 -right-2 w-3 h-3 bg-yellow-200 rounded-full animate-[flash_2s_ease-in-out_infinite] opacity-0" />
             <div className="absolute -top-1 right-6 w-2 h-2 bg-white rounded-full animate-[flash_2.5s_ease-in-out_infinite_0.3s] opacity-0" />
