@@ -374,7 +374,7 @@ export default function App() {
       
       {showConfetti && <ConfettiOverlay />}
 
-      <header className="relative bg-gradient-to-b from-yellow-900/40 via-slate-900 to-slate-950 border-b border-yellow-500/20 pt-16 pb-10 px-4 text-center overflow-hidden">
+      <header className="relative bg-gradient-to-b from-yellow-900/40 via-slate-900 to-slate-950 border-b border-yellow-500/20 pt-[calc(4rem+env(safe-area-inset-top))] pb-10 px-4 text-center overflow-hidden">
         <div className="absolute top-[-50%] left-[-10%] w-[120%] h-[200%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-400/10 via-transparent to-transparent animate-[pulse_8s_ease-in-out_infinite] pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none mix-blend-overlay"></div>
         
@@ -388,8 +388,8 @@ export default function App() {
             KJOL
           </h1>
           
-          <p className="text-sm md:text-base text-slate-400 tracking-wide mb-3">
-            <span className="text-blue-400 font-bold">K</span>im &amp; <span className="text-pink-400 font-bold">J</span>esper's <span className="text-yellow-400 font-bold">O</span>scar <span className="text-yellow-400 font-bold">L</span>ist
+          <p className="text-sm md:text-base text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-amber-500 font-semibold tracking-wide mb-3">
+            <span className="underline decoration-yellow-400/60 underline-offset-4">K</span>im &amp; <span className="underline decoration-yellow-400/60 underline-offset-4">J</span>esper's <span className="underline decoration-yellow-400/60 underline-offset-4">O</span>scar <span className="underline decoration-yellow-400/60 underline-offset-4">L</span>ist
           </p>
 
           <div className="mt-8 w-full max-w-md mx-auto">

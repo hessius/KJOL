@@ -6,10 +6,22 @@ html, body {
 
 /* iOS safe area insets for PWA */
 #root {
-  padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+/* Safe area top bar matches header gradient top color */
+#root::before {
+  content: '';
+  display: block;
+  height: env(safe-area-inset-top);
+  background: linear-gradient(to bottom, #3a2a1a, #2a1f18);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
 }
 
 .custom-scrollbar::-webkit-scrollbar { height: 6px; }
