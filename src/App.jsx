@@ -74,6 +74,7 @@ export default function App() {
   const [sortBy, setSortBy] = useState('year-desc');
   
   const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiReason, setConfettiReason] = useState('');
   const [isClearingCache, setIsClearingCache] = useState(false); 
   const [showApiKey, setShowApiKey] = useState(false);
   const [yearSort, setYearSort] = useState('year-desc');
@@ -234,6 +235,7 @@ export default function App() {
     if (loading || Object.keys(progress).length === 0) return;
 
     let leveledUp = false;
+    let reason = '';
     const yearStats = {};
 
     mergedMovies.forEach(movie => {
@@ -247,16 +249,18 @@ export default function App() {
     Object.keys(yearStats).forEach(year => {
       const stat = yearStats[year];
       const pct = (stat.current / stat.max) * 100;
-      const currentLevel = getLevelInfo(pct).threshold;
+      const currentLevel = getLevelInfo(pct);
       
       const prevLevel = previousLevelsRef.current[year] || 0;
-      if (currentLevel > prevLevel && stat.current > 0 && previousLevelsRef.current[year] !== undefined) {
+      if (currentLevel.threshold > prevLevel && stat.current > 0 && previousLevelsRef.current[year] !== undefined) {
         leveledUp = true;
+        reason = `${year} reached ${currentLevel.name} level!`;
       }
-      previousLevelsRef.current[year] = currentLevel;
+      previousLevelsRef.current[year] = currentLevel.threshold;
     });
 
     if (leveledUp) {
+      setConfettiReason(reason);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000); 
     }
@@ -402,7 +406,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans pb-20 selection:bg-yellow-500/30 relative">
       
-      {showConfetti && <ConfettiOverlay />}
+      {showConfetti && <ConfettiOverlay reason={confettiReason} />}
 
       <header className="relative bg-gradient-to-b from-yellow-900/40 via-slate-900 to-slate-950 border-b border-yellow-500/20 pt-[calc(4rem+env(safe-area-inset-top))] pb-10 px-4 text-center overflow-hidden">
         <div className="absolute top-[-50%] left-[-10%] w-[120%] h-[200%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-400/10 via-transparent to-transparent animate-[pulse_8s_ease-in-out_infinite] pointer-events-none" />
@@ -784,28 +788,46 @@ export default function App() {
 
 // --- SUBCOMPONENTS ---
 
-function ConfettiOverlay() {
+function generateParticles() {
+  return Array.from({ length: 50 }).map(() => ({
+    left: Math.random() * 100,
+    animDuration: 1.5 + Math.random() * 2,
+    delay: Math.random() * 0.5,
+    color: ['bg-yellow-400', 'bg-yellow-200', 'bg-amber-500', 'bg-white'][Math.floor(Math.random() * 4)],
+    shape: Math.random() > 0.5 ? 'rounded-full' : 'rounded-sm',
+  }));
+}
+
+function ConfettiOverlay({ reason }) {
+  const [showToast, setShowToast] = useState(true);
+  const [particles] = useState(() => generateParticles());
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setShowToast(false), 3500);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
-      {Array.from({ length: 50 }).map((_, i) => {
-        const left = Math.random() * 100;
-        const animDuration = 1.5 + Math.random() * 2;
-        const delay = Math.random() * 0.5;
-        const color = ['bg-yellow-400', 'bg-yellow-200', 'bg-amber-500', 'bg-white'][Math.floor(Math.random() * 4)];
-        const shape = Math.random() > 0.5 ? 'rounded-full' : 'rounded-sm';
-        
-        return (
+      {reason && showToast && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[101] animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="bg-slate-900/95 backdrop-blur-xl border border-yellow-500/40 rounded-2xl px-6 py-4 shadow-[0_0_40px_rgba(234,179,8,0.3)] text-center max-w-sm">
+            <Sparkles className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
+            <p className="text-yellow-400 font-black text-lg">{reason}</p>
+          </div>
+        </div>
+      )}
+      {particles.map((p, i) => (
           <div 
             key={i}
-            className={`absolute top-[-5%] w-2 h-2 sm:w-3 sm:h-3 ${color} ${shape} animate-confetti-fall`}
+            className={`absolute top-[-5%] w-2 h-2 sm:w-3 sm:h-3 ${p.color} ${p.shape} animate-confetti-fall`}
             style={{ 
-              left: `${left}%`, 
-              animationDuration: `${animDuration}s`,
-              animationDelay: `${delay}s` 
+              left: `${p.left}%`, 
+              animationDuration: `${p.animDuration}s`,
+              animationDelay: `${p.delay}s` 
             }}
           />
-        );
-      })}
+      ))}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes confetti-fall {
           0% { transform: translateY(0) rotate(0deg); opacity: 1; }
