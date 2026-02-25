@@ -1,36 +1,43 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Star, Award, Film, Trophy, Popcorn, Search, CheckCircle2, Circle, Sparkles, Settings, ImageIcon, ArrowUpDown, Calendar, Clock, PlayCircle, ThumbsUp, ThumbsDown, Medal, Flame, Users, Clapperboard, Database, RefreshCw, Trash2, Zap } from 'lucide-react';
+import { MOVIES as INITIAL_MOVIES } from './data/movies';
 
 // ============================================================================
-// LOCAL STORAGE PERSISTENCE (replaces Firebase)
+// SERVER API HELPERS
 // ============================================================================
-const PROGRESS_KEY = 'oscar-tracker-progress';
-const OMDB_CACHE_KEY = 'oscar-tracker-omdb-cache';
+const API_BASE = '/api';
 
-function loadFromStorage(key, fallback = {}) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch { return fallback; }
+async function apiGet(path) {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  return res.json();
 }
 
-function saveToStorage(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+async function apiPost(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`);
+  return res.json();
 }
 
-// --- MOCK DATA ---
-const INITIAL_MOVIES = [
-  { id: 'oppenheimer-2023', title: 'Oppenheimer', year: 2023, nominations: 13, wins: 7, runtime: 180, blurb: 'The story of American scientist, J. Robert Oppenheimer, and his role in the development of the atomic bomb.', imdb: 'tt15398776' },
-  { id: 'poor-things-2023', title: 'Poor Things', year: 2023, nominations: 11, wins: 4, runtime: 141, blurb: 'The incredible tale about the fantastical evolution of Bella Baxter...', imdb: 'tt14230458' },
-  { id: 'eeaao-2022', title: 'Everything Everywhere All at Once', year: 2022, nominations: 11, wins: 7, runtime: 139, blurb: 'A middle-aged Chinese immigrant is swept up into an insane adventure across other universes.', imdb: 'tt6710474' },
-  { id: 'dune-2021', title: 'Dune', year: 2021, nominations: 10, wins: 6, runtime: 155, blurb: 'A noble family becomes embroiled in a war for control over the galaxy...', imdb: 'tt1160419' },
-  { id: 'parasite-2019', title: 'Parasite', year: 2019, nominations: 6, wins: 4, runtime: 132, blurb: 'Greed and class discrimination threaten the newly formed symbiotic relationship...', imdb: 'tt6751668' },
-  { id: 'mad-max-2015', title: 'Mad Max: Fury Road', year: 2015, nominations: 10, wins: 6, runtime: 120, blurb: 'In a post-apocalyptic wasteland, a woman rebels against a tyrannical ruler...', imdb: 'tt1392190' },
-  { id: 'gravity-2013', title: 'Gravity', year: 2013, nominations: 10, wins: 7, runtime: 91, blurb: 'Two astronauts work together to survive after an accident leaves them stranded in space.', imdb: 'tt1454468' },
-  { id: 'shawshank-1994', title: 'The Shawshank Redemption', year: 1994, nominations: 7, wins: 0, runtime: 142, blurb: 'A banker convicted of uxoricide forms a friendship over a quarter century...', imdb: 'tt0111161' },
-  { id: 'dark-knight-2008', title: 'The Dark Knight', year: 2008, nominations: 8, wins: 2, runtime: 152, blurb: 'When the menace known as the Joker wreaks havoc and chaos...', imdb: 'tt0468569' },
-  { id: 'la-la-land-2016', title: 'La La Land', year: 2016, nominations: 14, wins: 6, runtime: 128, blurb: 'While navigating their careers in Los Angeles, a pianist and an actress fall in love...', imdb: 'tt3783958' }
-];
+async function apiPut(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`PUT ${path} failed: ${res.status}`);
+  return res.json();
+}
+
+async function apiDelete(path) {
+  const res = await fetch(`${API_BASE}${path}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`);
+  return res.json();
+}
 
 // --- LOGIC ---
 const calculateXP = (movie, jesperSeen, kimSeen) => {
@@ -38,12 +45,12 @@ const calculateXP = (movie, jesperSeen, kimSeen) => {
   const jesperBase = jesperSeen ? (kimSeen ? 6 : 5) : 0;
   const kimBase = kimSeen ? (jesperSeen ? 6 : 5) : 0;
 
-  const jesperXp = Math.round(jesperBase * multiplier);
-  const kimXp = Math.round(kimBase * multiplier);
-  const totalXp = jesperXp + kimXp;
+  const jesperXp = Math.round(jesperBase * multiplier * 10) / 10;
+  const kimXp = Math.round(kimBase * multiplier * 10) / 10;
+  const totalXp = Math.round(jesperXp + kimXp);
   
-  const maxPotential = Math.round(6 * multiplier) * 2;
-  return { jesper: jesperXp, kim: kimXp, total: totalXp, multiplier: multiplier.toFixed(2), maxPotential, remainingPotential: maxPotential - totalXp };
+  const maxPotential = Math.round(6 * 2 * multiplier);
+  return { jesper: Math.round(jesperXp), kim: Math.round(kimXp), total: totalXp, multiplier: multiplier.toFixed(2), maxPotential, remainingPotential: maxPotential - totalXp };
 };
 
 const getLevelInfo = (percentage) => {
@@ -55,12 +62,12 @@ const getLevelInfo = (percentage) => {
 };
 
 export default function App() {
-  const [progress, setProgress] = useState(() => loadFromStorage(PROGRESS_KEY));
-  const [omdbCache, setOmdbCache] = useState(() => loadFromStorage(OMDB_CACHE_KEY));
-  const [loading] = useState(false);
+  const [progress, setProgress] = useState({});
+  const [omdbCache, setOmdbCache] = useState({});
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('movies');
   
-  const [omdbKey, setOmdbKey] = useState(() => localStorage.getItem('omdbKey') || '');
+  const [omdbKey, setOmdbKey] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState('all');
   const [selectedYear, setSelectedYear] = useState('all');
@@ -71,10 +78,31 @@ export default function App() {
   const previousLevelsRef = useRef({});
   const fetchingRefs = useRef(new Set()); 
 
-  const handleSaveOmdbKey = (key) => {
+  // --- LOAD ALL DATA FROM SERVER ON MOUNT ---
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [progressData, cacheData, keyData] = await Promise.all([
+          apiGet('/progress'),
+          apiGet('/cache'),
+          apiGet('/settings/omdbKey'),
+        ]);
+        setProgress(progressData);
+        setOmdbCache(cacheData);
+        setOmdbKey(keyData.value || '');
+      } catch (err) {
+        console.error('Failed to load data from server:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const handleSaveOmdbKey = useCallback(async (key) => {
     setOmdbKey(key);
-    localStorage.setItem('omdbKey', key);
-  };
+    try { await apiPut('/settings/omdbKey', { value: key }); } catch (err) { console.error('Failed to save API key:', err); }
+  }, []);
 
   // --- MERGE LOCAL ARRAY WITH CACHED OMDB DATA ---
   const mergedMovies = useMemo(() => {
@@ -102,19 +130,7 @@ export default function App() {
     return [...new Set(years)].sort((a, b) => b - a);
   }, [mergedMovies]);
 
-  // --- PERSIST PROGRESS TO LOCAL STORAGE ---
-  useEffect(() => {
-    if (Object.keys(progress).length > 0) {
-      saveToStorage(PROGRESS_KEY, progress);
-    }
-  }, [progress]);
-
-  // --- PERSIST OMDB CACHE TO LOCAL STORAGE ---
-  useEffect(() => {
-    if (Object.keys(omdbCache).length > 0) {
-      saveToStorage(OMDB_CACHE_KEY, omdbCache);
-    }
-  }, [omdbCache]);
+  // Progress and cache are persisted server-side on each write — no local effects needed.
 
   // --- BACKGROUND BATCH FETCHER WITH VALIDATION ---
   useEffect(() => {
@@ -137,10 +153,10 @@ export default function App() {
           const data = await res.json();
           
           if (data.Response === "True" && data.imdbID === movie.imdb && !isCancelled) {
-            setOmdbCache(prev => ({
-              ...prev,
-              [movie.imdb]: { ...data, _cachedAt: new Date().toISOString() }
-            }));
+            const entry = { ...data, _cachedAt: new Date().toISOString() };
+            setOmdbCache(prev => ({ ...prev, [movie.imdb]: entry }));
+            // Persist to server
+            apiPost('/cache', { imdbId: movie.imdb, data: entry }).catch(e => console.error('Cache save failed:', e));
           }
         } catch (error) {
           console.error("Background fetch failed for", movie.imdb, error);
@@ -161,13 +177,13 @@ export default function App() {
       setOmdbCache(prev => {
         const next = { ...prev };
         delete next[imdbId];
-        saveToStorage(OMDB_CACHE_KEY, next);
         return next;
       });
+      try { await apiDelete(`/cache/${imdbId}`); } catch (e) { console.error('Cache delete failed:', e); }
     } else {
       setIsClearingCache(true);
       setOmdbCache({});
-      saveToStorage(OMDB_CACHE_KEY, {});
+      try { await apiDelete('/cache'); } catch (e) { console.error('Cache clear failed:', e); }
       setIsClearingCache(false);
     }
   };
@@ -205,12 +221,13 @@ export default function App() {
     }
   }, [progress, loading, mergedMovies]);
 
-  // --- ACTIONS (localStorage-backed) ---
+  // --- ACTIONS (server-persisted) ---
   const handleToggle = (movieId, person) => {
     const currentData = progress[movieId] || { jesper: false, kim: false, jesperRating: null, kimRating: null };
     const newData = { ...currentData, [person]: !currentData[person] };
     if (!newData[person]) newData[`${person}Rating`] = null;
     setProgress(prev => ({ ...prev, [movieId]: newData }));
+    apiPost('/progress', { movieId, data: newData }).catch(e => console.error('Progress save failed:', e));
   };
 
   const handleRating = (movieId, person, ratingValue) => {
@@ -219,6 +236,7 @@ export default function App() {
     const newRating = currentData[ratingKey] === ratingValue ? null : ratingValue;
     const newData = { ...currentData, [ratingKey]: newRating };
     setProgress(prev => ({ ...prev, [movieId]: newData }));
+    apiPost('/progress', { movieId, data: newData }).catch(e => console.error('Progress save failed:', e));
   };
 
   // --- DERIVED DATA ---
@@ -500,7 +518,7 @@ export default function App() {
                   <div className="flex flex-wrap gap-3 sm:gap-4 text-xs font-semibold text-amber-500/80 mt-2">
                     <span className="flex items-center gap-1.5"><Star size={14} /> {movie.nominations} Nom</span>
                     <span className="flex items-center gap-1.5"><Award size={14} /> {movie.wins} Wins</span>
-                    <span className="flex items-center gap-1.5 text-slate-400"><Clock size={14} /> {movie.runtime} min</span>
+                    {movie.runtime > 0 && <span className="flex items-center gap-1.5 text-slate-400"><Clock size={14} /> {movie.runtime} min</span>}
                   </div>
                 </div>
                 
@@ -509,9 +527,11 @@ export default function App() {
                   <div className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 to-yellow-600">
                     +{movie.remainingPotential}
                   </div>
-                  <div className="text-xs font-bold text-yellow-500/60 mt-1 flex items-center gap-1">
-                    <Zap size={12} /> {movie.xpPerMin} / min
-                  </div>
+                  {movie.runtime > 0 && (
+                    <div className="text-xs font-bold text-yellow-500/60 mt-1 flex items-center gap-1">
+                      <Zap size={12} /> {movie.xpPerMin} / min
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -889,12 +909,14 @@ function MovieCard({ movie, progress, onToggle, onRating, onClearCache }) {
         <div className="flex flex-wrap gap-2 mb-4">
           <Badge icon={<Star className="w-3.5 h-3.5 text-yellow-500" />} text={`${movie.nominations} Nom`} />
           <Badge icon={<Award className="w-3.5 h-3.5 text-yellow-500" />} text={`${movie.wins} Wins`} />
-          <Badge 
-            icon={<Clock className={`w-3.5 h-3.5 ${isShort ? 'text-green-400' : 'text-slate-400'}`} />} 
-            text={`${movie.runtime} min`} 
-            highlight={isShort} 
-          />
-          {!isCompleted && xp.remainingPotential > 0 && (
+          {movie.runtime > 0 && (
+            <Badge 
+              icon={<Clock className={`w-3.5 h-3.5 ${isShort ? 'text-green-400' : 'text-slate-400'}`} />} 
+              text={`${movie.runtime} min`} 
+              highlight={isShort} 
+            />
+          )}
+          {movie.runtime > 0 && !isCompleted && xp.remainingPotential > 0 && (
             <Badge 
               icon={<Zap className="w-3.5 h-3.5 text-amber-400" />} 
               text={`${xpPerMin} XP/m`} 

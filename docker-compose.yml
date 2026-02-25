@@ -1,0 +1,16 @@
+services:
+  kjol:
+    build: .
+    container_name: kjol
+    restart: unless-stopped
+    ports:
+      - "0550:3000"
+    volumes:
+      - kjol-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_PATH=/app/data/kjol.json
+
+volumes:
+  kjol-data:

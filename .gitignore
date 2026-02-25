@@ -26,3 +26,11 @@ dist-ssr
 # Task notes
 tasks.md
 tasks.md.m
+movielists.js
+movie-list-scraper-validator.js
+resources/
+
+# Backend data
+backend/data/
+backend/node_modules/
+*.db

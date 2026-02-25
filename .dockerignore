@@ -1,0 +1,12 @@
+node_modules
+dist
+backend/node_modules
+backend/data
+*.db
+.git
+.gitignore
+tasks.md
+tasks.md.m
+movielists.js
+README.md
+.vscode
