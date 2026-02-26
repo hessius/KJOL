@@ -336,6 +336,8 @@ export default function App() {
     const unlocked = [];
     
     const getTier = (count, thresholds) => {
+      if (count >= thresholds[4]) return { tier: 5, label: 'Diamond', stars: '💎💎💎💎💎', borderColor: 'border-violet-400', bgColor: 'bg-violet-500/15' };
+      if (count >= thresholds[3]) return { tier: 4, label: 'Platinum', stars: '💠💠💠💠', borderColor: 'border-cyan-400', bgColor: 'bg-cyan-500/15' };
       if (count >= thresholds[2]) return { tier: 3, label: 'Gold', stars: '⭐⭐⭐', borderColor: 'border-yellow-400', bgColor: 'bg-yellow-500/15' };
       if (count >= thresholds[1]) return { tier: 2, label: 'Silver', stars: '⭐⭐', borderColor: 'border-slate-300', bgColor: 'bg-slate-300/10' };
       if (count >= thresholds[0]) return { tier: 1, label: 'Bronze', stars: '⭐', borderColor: 'border-amber-700', bgColor: 'bg-amber-700/10' };
@@ -343,25 +345,25 @@ export default function App() {
     };
 
     const nightOwlCount = mergedMovies.filter(m => m.runtime >= 180 && progress[m.id]?.jesper && progress[m.id]?.kim).length;
-    const nightTier = getTier(nightOwlCount, [1, 3, 5]);
+    const nightTier = getTier(nightOwlCount, [1, 3, 5, 8, 12]);
     if (nightTier) unlocked.push({ id: 'night', title: 'Night Owls', desc: `Watched ${nightOwlCount} movies over 3h together.`, icon: <Clock />, ...nightTier });
 
     const shortMovies = mergedMovies.filter(m => m.runtime < 120 && progress[m.id]?.jesper && progress[m.id]?.kim).length;
-    const shortTier = getTier(shortMovies, [3, 5, 10]);
+    const shortTier = getTier(shortMovies, [3, 5, 10, 15, 25]);
     if (shortTier) unlocked.push({ id: 'short', title: 'Parent Hacks', desc: `Watched ${shortMovies} movies under 2h together.`, icon: <Flame />, ...shortTier });
 
     const agreedCount = mergedMovies.filter(m => {
       const p = progress[m.id];
       return p?.jesperRating && p?.kimRating && p.jesperRating === p.kimRating;
     }).length;
-    const agreeTier = getTier(agreedCount, [3, 5, 10]);
+    const agreeTier = getTier(agreedCount, [3, 5, 10, 20, 30]);
     if (agreeTier) unlocked.push({ id: 'agree', title: 'Perfect Harmony', desc: `Gave the same rating on ${agreedCount} movies.`, icon: <ThumbsUp />, ...agreeTier });
 
     const reachedCritic = stats.sortedYears.some(y => y.pct >= 75);
     if (reachedCritic) unlocked.push({ id: 'critic', title: 'Cinephiles', desc: 'Reached the Critic level (75%) for a year.', icon: <Medal />, tier: 0, borderColor: 'border-yellow-500/30', bgColor: 'bg-yellow-500/10' });
 
     const oldies = mergedMovies.filter(m => m.year <= 2010 && progress[m.id]?.jesper && progress[m.id]?.kim).length;
-    const oldieTier = getTier(oldies, [3, 5, 10]);
+    const oldieTier = getTier(oldies, [3, 5, 10, 20, 30]);
     if (oldieTier) unlocked.push({ id: 'time', title: 'Time Travelers', desc: `Watched ${oldies} older classics (pre-2011).`, icon: <Star />, ...oldieTier });
 
     // --- MILESTONE BADGES ---
@@ -374,7 +376,7 @@ export default function App() {
 
     // Oscar Sweep — watched a movie that won 4+ Oscars
     const sweepMovies = mergedMovies.filter(m => m.wins >= 4 && (progress[m.id]?.jesper || progress[m.id]?.kim)).length;
-    const sweepTier = getTier(sweepMovies, [1, 3, 5]);
+    const sweepTier = getTier(sweepMovies, [1, 3, 5, 10, 15]);
     if (sweepTier) unlocked.push({ id: 'sweep', title: 'Oscar Sweep', desc: `Watched ${sweepMovies} movies with 4+ Oscar wins.`, icon: <Trophy />, ...sweepTier });
 
     // Century Club — watched 100+ movies (either person)
@@ -385,7 +387,7 @@ export default function App() {
 
     // Dynamic Duo — watched 50+ movies together
     const togetherCount = mergedMovies.filter(m => progress[m.id]?.jesper && progress[m.id]?.kim).length;
-    const duoTier = getTier(togetherCount, [25, 50, 100]);
+    const duoTier = getTier(togetherCount, [25, 50, 100, 150, 200]);
     if (duoTier) unlocked.push({ id: 'duo', title: 'Dynamic Duo', desc: `Watched ${togetherCount} movies together.`, icon: <Users />, ...duoTier });
 
     // Genre Explorer — watched movies spanning 5+ different genres
@@ -408,12 +410,12 @@ export default function App() {
     const highRated = mergedMovies.filter(m => 
       (progress[m.id]?.jesper || progress[m.id]?.kim) && m.imdbRating && parseFloat(m.imdbRating) >= 8.0
     ).length;
-    const criticTier = getTier(highRated, [5, 10, 20]);
+    const criticTier = getTier(highRated, [5, 10, 20, 35, 50]);
     if (criticTier) unlocked.push({ id: 'darling', title: "Critics' Darling", desc: `Watched ${highRated} movies rated 8.0+ on IMDb.`, icon: <Sparkles />, ...criticTier });
 
     // Underdog Fan — watched 5+ movies with 0 wins
     const underdogs = mergedMovies.filter(m => m.wins === 0 && (progress[m.id]?.jesper || progress[m.id]?.kim)).length;
-    const underdogTier = getTier(underdogs, [3, 5, 10]);
+    const underdogTier = getTier(underdogs, [3, 5, 10, 20, 30]);
     if (underdogTier) unlocked.push({ id: 'underdog', title: 'Underdog Fan', desc: `Watched ${underdogs} movies with zero wins.`, icon: <ThumbsDown />, ...underdogTier });
 
     return unlocked;
@@ -800,6 +802,7 @@ export default function App() {
                         {b.icon}
                       </div>
                       <h4 className="font-bold text-slate-200 text-sm mb-1">{b.title}</h4>
+                      {b.label && <span className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${b.tier === 5 ? 'text-violet-400' : b.tier === 4 ? 'text-cyan-400' : b.tier === 3 ? 'text-yellow-400' : b.tier === 2 ? 'text-slate-300' : 'text-amber-600'}`}>{b.label}</span>}
                       {b.stars && <div className="text-xs mb-1">{b.stars}</div>}
                       <p className="text-xs text-slate-400 leading-tight">{b.desc}</p>
                     </div>
