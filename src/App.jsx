@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Star, Award, Film, Trophy, Popcorn, Search, CheckCircle2, Circle, Sparkles, Settings, ImageIcon, ArrowUpDown, Calendar, Clock, PlayCircle, ThumbsUp, ThumbsDown, Medal, Flame, Users, Clapperboard, Database, RefreshCw, Trash2, Zap, Eye, EyeOff, X, ExternalLink } from 'lucide-react';
+import { Star, Award, Film, Trophy, Popcorn, Search, CheckCircle2, Circle, Sparkles, Settings, ImageIcon, ArrowUpDown, Calendar, Clock, PlayCircle, ThumbsUp, ThumbsDown, Medal, Flame, Users, Clapperboard, Database, RefreshCw, Trash2, Zap, Eye, EyeOff, X, ExternalLink, AlertTriangle } from 'lucide-react';
 import { MOVIES as INITIAL_MOVIES } from './data/movies';
 
 // ============================================================================
@@ -511,6 +511,51 @@ export default function App() {
 
   const activeTop10 = top10Mode === 'kim' ? top10Kim : top10Mode === 'jesper' ? top10Jesper : top10;
 
+  // --- ROAD TO THE OSCARS / REMINDERS ---
+  const oscarReminders = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1; // 1-indexed
+    const currentDay = now.getDate();
+    const currentYear = now.getFullYear();
+
+    // Find the latest year in the dataset
+    const latestYear = Math.max(...mergedMovies.map(m => m.year));
+    const latestYearMovies = mergedMovies.filter(m => m.year === latestYear);
+    const hasNominations = latestYearMovies.length > 0;
+    const totalWins = latestYearMovies.reduce((sum, m) => sum + (m.wins || 0), 0);
+    const hasAwards = totalWins > 0;
+
+    // Road to the Oscars: nominations exist but no wins yet
+    const isRoadToOscars = hasNominations && !hasAwards;
+
+    // Reminder: add nominations (Jan 20 onward, if the current year isn't in data yet)
+    // The current ceremony year's nominations typically announced mid-January
+    const currentCeremonyYear = currentYear;
+    const hasCurrentYear = mergedMovies.some(m => m.year === currentCeremonyYear);
+    const showNominationReminder = (currentMonth >= 2 || (currentMonth === 1 && currentDay >= 20)) && !hasCurrentYear;
+
+    // Reminder: add awards (around Oscar day — mid-March, when nominations exist but no wins)
+    // Oscar ceremony is typically late Feb / early-mid March
+    const showAwardsReminder = isRoadToOscars && ((currentMonth === 2 && currentDay >= 20) || currentMonth === 3);
+
+    // Progress for Road to the Oscars
+    let roadProgress = null;
+    if (isRoadToOscars) {
+      const watched = latestYearMovies.filter(m => progress[m.id]?.jesper || progress[m.id]?.kim).length;
+      const watchedTogether = latestYearMovies.filter(m => progress[m.id]?.jesper && progress[m.id]?.kim).length;
+      roadProgress = {
+        year: latestYear,
+        total: latestYearMovies.length,
+        watched,
+        watchedTogether,
+        pct: Math.round((watchedTogether / latestYearMovies.length) * 100),
+        totalNominations: latestYearMovies.reduce((s, m) => s + m.nominations, 0),
+      };
+    }
+
+    return { isRoadToOscars, showNominationReminder, showAwardsReminder, roadProgress, latestYear, currentCeremonyYear };
+  }, [mergedMovies, progress]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-yellow-500 gap-4">
@@ -579,12 +624,62 @@ export default function App() {
         </div>
       </header>
 
-      <nav className="flex justify-center flex-wrap gap-2 p-4 sticky top-0 bg-slate-950/80 backdrop-blur-xl z-50 border-b border-white/10 shadow-lg shadow-black/50">
+      <nav className="flex items-center justify-center gap-2 p-3 sticky top-0 bg-slate-950/80 backdrop-blur-xl z-50 border-b border-white/10 shadow-lg shadow-black/50">
+        <img src="/kjol-icon.png" alt="KJOL" className="w-8 h-8 object-contain mr-1 opacity-90" />
         <NavButton active={activeTab === 'movies'} onClick={() => setActiveTab('movies')} icon={<Film size={18}/>} label="Movies" />
         <NavButton active={activeTab === 'top10'} onClick={() => setActiveTab('top10')} icon={<Star size={18}/>} label="Top 10" />
         <NavButton active={activeTab === 'stats'} onClick={() => setActiveTab('stats')} icon={<Award size={18}/>} label="Stats" />
         <NavButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={18}/>} label="Settings" />
       </nav>
+
+      {/* Road to the Oscars / Reminders */}
+      {oscarReminders.isRoadToOscars && oscarReminders.roadProgress && (
+        <div className="relative overflow-hidden bg-gradient-to-r from-amber-950/60 via-yellow-900/40 to-amber-950/60 border-b border-yellow-500/20">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay pointer-events-none" />
+          <div className="max-w-4xl mx-auto px-4 py-6 relative z-10">
+            <div className="flex items-center gap-3 mb-3">
+              <Trophy className="w-6 h-6 text-yellow-400 shrink-0" />
+              <h2 className="text-lg font-black uppercase tracking-widest text-yellow-400">Road to the Oscars {oscarReminders.roadProgress.year}</h2>
+            </div>
+            <p className="text-sm text-yellow-200/70 mb-4">
+              {oscarReminders.roadProgress.total} nominated films with {oscarReminders.roadProgress.totalNominations} total nominations — awards ceremony approaching!
+            </p>
+            <div className="flex items-center gap-4 mb-2">
+              <div className="flex-1">
+                <div className="h-3 bg-slate-900/60 rounded-full overflow-hidden border border-yellow-500/20">
+                  <div
+                    className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(234,179,8,0.4)]"
+                    style={{ width: `${oscarReminders.roadProgress.pct}%` }}
+                  />
+                </div>
+              </div>
+              <span className="text-sm font-bold text-yellow-400 shrink-0">{oscarReminders.roadProgress.pct}%</span>
+            </div>
+            <div className="flex gap-6 text-xs text-slate-400">
+              <span><span className="text-yellow-400 font-bold">{oscarReminders.roadProgress.watchedTogether}</span> / {oscarReminders.roadProgress.total} watched together</span>
+              <span><span className="text-yellow-400 font-bold">{oscarReminders.roadProgress.watched}</span> watched by at least one</span>
+            </div>
+
+            {oscarReminders.showAwardsReminder && (
+              <div className="mt-4 flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3 text-sm">
+                <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
+                <span className="text-yellow-200">The ceremony is right around the corner — don&apos;t forget to update the winners!</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {oscarReminders.showNominationReminder && !oscarReminders.isRoadToOscars && (
+        <div className="relative overflow-hidden bg-gradient-to-r from-violet-950/40 via-indigo-900/30 to-violet-950/40 border-b border-violet-500/20">
+          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-violet-400 shrink-0" />
+            <p className="text-sm text-violet-200">
+              <span className="font-bold">Nominations time!</span> The {oscarReminders.currentCeremonyYear} Oscar nominations should be out — don&apos;t forget to add them to the movie list.
+            </p>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto p-4 pt-8">
         
